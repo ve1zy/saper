@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'cell.dart';
 import 'settings.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/gestures.dart'; // для TapDownDetails
-import '../screens.dart'; // Импорт экранов
+import 'package:flutter/gestures.dart';
+import '../screens.dart';
 import '../game_wrapper.dart';
 class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   late GameSettings settings;
@@ -16,14 +16,46 @@ class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   late bool gameOver;
   late bool gameWon;
   late DateTime startTime;
+  DateTime? _endTime;
   final Random _random = Random();
   BuildContext? _gameContext;
   BuildContext? gameWrapperContext;
-  late void Function(bool isWin) onGameEnd; // Колбек для окончания игры
+  late void Function(bool isPaused) onPause;
+  bool _isPaused = false;
+  DateTime? _pauseStartTime;
+  Duration _pausedDuration = Duration.zero;
+  late void Function(bool isWin) onGameEnd; 
   MinesweeperGame({GameSettings? settings}) {
     this.settings = settings ?? GameSettings.easy;
   }
+int get currentTimeInSeconds {
+    if (_endTime != null) {
+      return _endTime!.difference(startTime).inSeconds;
+    }
+    if (_isPaused && _pauseStartTime != null) {
+      return _pauseStartTime!.difference(startTime).inSeconds - _pausedDuration.inSeconds;
+    }
+    return DateTime.now().difference(startTime).inSeconds - _pausedDuration.inSeconds;
+  }
+  void pauseGame() {
+    if (_isPaused) return;
+    _isPaused = true;
+    _pauseStartTime = DateTime.now();
+    if (onPause != null) {
+      onPause(true);
+    }
+  }
 
+  void resumeGame() {
+    if (!_isPaused) return;
+    _isPaused = false;
+    if (_pauseStartTime != null) {
+      _pausedDuration += DateTime.now().difference(_pauseStartTime!);
+    }
+    if (onPause != null) {
+      onPause(false);
+    }
+  }
   @override
   Future<void> onLoad() async {
     super.onLoad();
@@ -33,12 +65,13 @@ class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   _gameContext = context;
 }
 
+
 void _endGame(bool isWin) {
+  _endTime = DateTime.now();
   gameOver = !isWin;
   gameWon = isWin;
 
   if (!isWin) {
-    // Показываем все мины при проигрыше
     for (final row in grid) {
       for (final cell in row) {
         if (cell.isMine) cell.isRevealed = true;
@@ -48,15 +81,13 @@ void _endGame(bool isWin) {
 
   if (onGameEnd != null) {
     onGameEnd(isWin);
-  } else {
-    debugPrint('onGameEnd callback is null!');
   }
 }
   void resetGame({GameSettings? newSettings}) {
     if (newSettings != null) {
       settings = newSettings;
     }
-
+_endTime = null;
     grid = List.generate(
       settings.height,
       (y) => List.generate(
@@ -88,6 +119,7 @@ void _endGame(bool isWin) {
     cellsRevealed = 0;
     gameOver = false;
     gameWon = false;
+    _endTime = null;
     startTime = DateTime.now();
   }
 
@@ -113,6 +145,27 @@ void _endGame(bool isWin) {
 
   @override
   void render(Canvas canvas) {
+    if (_isPaused) {
+    final pauseText = TextPainter(
+      text: const TextSpan(
+        text: 'ПАУЗА',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 48,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    pauseText.layout();
+    pauseText.paint(
+      canvas,
+      Offset(
+        (size.x - pauseText.width) / 2,
+        (size.y - pauseText.height) / 2,
+      ),
+    );
+  }
     super.render(canvas);
     
     final cellSize = size.x / settings.width;
@@ -185,29 +238,7 @@ void _endGame(bool isWin) {
       }
     }
     
-    if (gameOver || gameWon) {
-      final message = gameOver ? 'Game Over!' : 'You Win!';
-      final textPainter = TextPainter(
-        text: TextSpan(
-          text: message,
-          style: TextStyle(
-            color: gameOver ? Colors.red : Colors.green,
-            fontSize: 40,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      );
-      textPainter.layout();
-      textPainter.paint(
-        canvas,
-        Offset(
-          (size.x - textPainter.width) / 2,
-          (size.y - textPainter.height) / 2,
-        ),
-      );
-    }
-    
+     
     final flagsText = TextPainter(
       text: TextSpan(
         text: 'Flags: ${settings.minesCount - flagsPlaced}',
@@ -224,7 +255,7 @@ void _endGame(bool isWin) {
     final timeElapsed = DateTime.now().difference(startTime).inSeconds;
     final timeText = TextPainter(
       text: TextSpan(
-        text: 'Time: $timeElapsed',
+        text: 'Time: ${currentTimeInSeconds}',
         style: TextStyle(
           color: Colors.white,
           fontSize: 24,
@@ -299,10 +330,8 @@ void onLongPress() {
       cell.isFlagged = !cell.isFlagged;
       flagsPlaced += cell.isFlagged ? 1 : -1;
       
-      // Проверка победы после установки флажка
       if (checkWinCondition()) {
         gameWon = true;
-        showGameOver(true);
       }
     }
   }
@@ -317,12 +346,12 @@ void onLongPress() {
   cellsRevealed++;
 
   if (cell.isMine) {
-    _endGame(false); // Проигрыш
+    _endGame(false);
     return;
   }
 
   if (checkWinCondition()) {
-    _endGame(true); // Победа
+    _endGame(true);
     return;
   }
 
@@ -339,29 +368,10 @@ void onLongPress() {
     }
   }
 } 
-void showGameOver(bool isWin) {
-  if (gameWrapperContext == null || !gameWrapperContext!.mounted) return;
-  
-  Navigator.of(gameWrapperContext!).pushReplacement(
-    MaterialPageRoute(
-      builder: (context) => GameOverScreen(
-        isWin: isWin,
-        onRestart: () {
-          Navigator.of(gameWrapperContext!).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const GameWrapper(), // Исправлено здесь
-            ),
-          );
-        },
-        onMenu: () {
-          Navigator.of(gameWrapperContext!).pushReplacement(
-            MaterialPageRoute(
-              builder: (context) => const MainMenuScreen(),
-            ),
-          );
-        },
-      ),
-    ),
-  );
-}
+@override
+  void update(double dt) {
+    if (!_isPaused) {
+      super.update(dt);
+    }
+  }
 }

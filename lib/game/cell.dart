@@ -3,7 +3,7 @@ class Cell {
   final int y;
   bool isMine;
   bool isRevealed;
-  bool isFlagged; // Флаг, что клетка помечена флажком
+  bool isFlagged; 
   int adjacentMines;
   
   Cell(this.x, this.y, this.isMine)
