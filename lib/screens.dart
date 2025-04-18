@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'game/minesweeper_game.dart';
+import 'game_wrapper.dart'; // Только этот импорт для GameWrapper// Должен быть только этот импорт GameWrapper
 import 'package:flame/game.dart';
-// Главное меню
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
@@ -18,32 +18,17 @@ class MainMenuScreen extends StatelessWidget {
               onPressed: () => Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => GameWrapper(
-                    game: MinesweeperGame(), // Создаем новую игру
-                  ),
+                  builder: (context) => const GameWrapper(),
                 ),
               ),
               child: const Text('Начать игру', style: TextStyle(fontSize: 24)),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-  onPressed: () => Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (context) => GameWrapper(
-        game: MinesweeperGame(), // Создаем новую игру
-      ),
-    ),
-  ),
-  child: const Text('Начать игру', style: TextStyle(fontSize: 24)),
-),
           ],
         ),
       ),
     );
   }
 }
-
 // Экран авторов
 class AuthorsScreen extends StatelessWidget {
   const AuthorsScreen({super.key});
@@ -76,101 +61,128 @@ class AuthorsScreen extends StatelessWidget {
 }
 
 // Экран завершения игры
+// class GameOverScreen extends StatelessWidget {
+//   final bool isWin;
+//   final VoidCallback onRestart;
+//   final VoidCallback onMenu;
+
+//   const GameOverScreen({
+//     super.key,
+//     required this.isWin,
+//     required this.onRestart,
+//     required this.onMenu,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: Colors.black.withOpacity(0.7), // Исправлено withOpacity
+//       body: Center(
+//         child: Column(
+//           mainAxisAlignment: MainAxisAlignment.center,
+//           children: [
+//             Text(
+//               isWin ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ',
+//               style: const TextStyle(
+//                 fontSize: 40,
+//                 color: Colors.white,
+//                 fontWeight: FontWeight.bold,
+//               ),
+//             ),
+//             const SizedBox(height: 40),
+//             ElevatedButton(
+//               onPressed: onRestart,
+//               style: ElevatedButton.styleFrom(
+//                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+//               ),
+//               child: const Text('Новая игра', style: TextStyle(fontSize: 24)),
+//             ),
+//             const SizedBox(height: 20),
+//             ElevatedButton(
+//               onPressed: onMenu,
+//               style: ElevatedButton.styleFrom(
+//                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+//               ),
+//               child: const Text('В главное меню', style: TextStyle(fontSize: 24)),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// // 
 class GameOverScreen extends StatelessWidget {
   final bool isWin;
   final VoidCallback onRestart;
-  final VoidCallback onMenu;  
+  final VoidCallback onMenu;
 
-   const GameOverScreen({
+  const GameOverScreen({
     super.key,
     required this.isWin,
     required this.onRestart,
     required this.onMenu,
   });
 
- @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black.withOpacity(0.7),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              isWin ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ',
-              style: const TextStyle(
-                fontSize: 40,
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: onRestart,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-              ),
-              child: const Text('Новая игра', style: TextStyle(fontSize: 24)),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: onMenu,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-              ),
-              child: const Text('В главное меню', style: TextStyle(fontSize: 24)),
-            ),
-          ],
-        ),
-      ),
-    );
-  } 
-}
-
-// Обертка для игры
-class GameWrapper extends StatelessWidget {
-  final FlameGame game;
-  const GameWrapper({super.key, required this.game});
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent, // Полностью прозрачный фон
       body: Stack(
         children: [
-          GameWidget(game: game),
-          Positioned(
-            top: 20,
-            left: 20,
-            child: IconButton(
-              icon: const Icon(Icons.pause, color: Colors.white),
-              onPressed: () => _showPauseMenu(context, game),
+          // Полупрозрачное затемнение
+          Container(
+            color: Colors.black.withOpacity(0.5),
+          ),
+          
+          // Основное содержимое
+          Center(
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[800]!.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isWin ? 'ПОБЕДА!' : 'ПОРАЖЕНИЕ',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onRestart,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                      ),
+                      child: const Text('Новая игра'),
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: onMenu,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                      ),
+                      child: const Text('В главное меню'),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showPauseMenu(BuildContext context, FlameGame game) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Пауза'),
-        content: const Text('Игра приостановлена'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Продолжить'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => const MainMenuScreen()),
-              );
-            },
-            child: const Text('В меню'),
           ),
         ],
       ),

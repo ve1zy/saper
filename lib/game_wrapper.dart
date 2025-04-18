@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flame/game.dart';
 import '../game/minesweeper_game.dart';
 import 'screens.dart';
-
+import 'game/settings.dart'; // Добавьте эту строку в импорты
 class GameWrapper extends StatefulWidget {
-  const GameWrapper({super.key});
+  final GameSettings settings;
+  
+  const GameWrapper({super.key, this.settings = GameSettings.easy});
 
   @override
   State<GameWrapper> createState() => _GameWrapperState();
@@ -16,12 +18,14 @@ class _GameWrapperState extends State<GameWrapper> {
   @override
   void initState() {
     super.initState();
-    game = MinesweeperGame()
-      ..onGameEnd = _handleGameEnd; // Подписываемся на событие окончания игры
+    game = MinesweeperGame() // Игра создается внутри
+      ..onGameEnd = _handleGameEnd;
   }
 
   void _handleGameEnd(bool isWin) {
-    Navigator.of(context).pushReplacement(
+    if (!mounted) return;
+    
+    Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
         builder: (context) => GameOverScreen(
           isWin: isWin,
@@ -29,17 +33,21 @@ class _GameWrapperState extends State<GameWrapper> {
             context,
             MaterialPageRoute(builder: (_) => const GameWrapper()),
           ),
-          onMenu: () => Navigator.pushReplacement(
+          onMenu: () => Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(builder: (_) => const MainMenuScreen()),
+            (route) => false,
           ),
         ),
       ),
+      (route) => false,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return GameWidget(game: game);
+    return Scaffold(
+      body: GameWidget(game: game),
+    );
   }
 }

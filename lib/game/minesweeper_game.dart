@@ -7,6 +7,7 @@ import 'settings.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/gestures.dart'; // для TapDownDetails
 import '../screens.dart'; // Импорт экранов
+import '../game_wrapper.dart';
 class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   late GameSettings settings;
   late List<List<Cell>> grid;
@@ -16,6 +17,7 @@ class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   late bool gameWon;
   late DateTime startTime;
   final Random _random = Random();
+  BuildContext? _gameContext;
   BuildContext? gameWrapperContext;
   late void Function(bool isWin) onGameEnd; // Колбек для окончания игры
   MinesweeperGame({GameSettings? settings}) {
@@ -27,26 +29,29 @@ class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
     super.onLoad();
     resetGame();
   }
+  void initContext(BuildContext context) {
+  _gameContext = context;
+}
+
 void _endGame(bool isWin) {
-    gameOver = !isWin;
-    gameWon = isWin;
-    
+  gameOver = !isWin;
+  gameWon = isWin;
+
+  if (!isWin) {
     // Показываем все мины при проигрыше
-    if (!isWin) {
-      for (final row in grid) {
-        for (final cell in row) {
-          if (cell.isMine) cell.isRevealed = true;
-        }
+    for (final row in grid) {
+      for (final cell in row) {
+        if (cell.isMine) cell.isRevealed = true;
       }
     }
-    
-    // Вызываем колбек
-    if (onGameEnd != null) {
-      onGameEnd(isWin);
-    } else {
-      print('Ошибка: onGameEnd не установлен!');
-    }
   }
+
+  if (onGameEnd != null) {
+    onGameEnd(isWin);
+  } else {
+    debugPrint('onGameEnd callback is null!');
+  }
+}
   void resetGame({GameSettings? newSettings}) {
     if (newSettings != null) {
       settings = newSettings;
@@ -265,32 +270,17 @@ void _endGame(bool isWin) {
       }
     }
   }
-
-
-//  @override
-//   void onLongPress() {
-//     if (gameOver || gameWon) return;
-    
-//     final cellSize = size.x / settings.width;
-//     final viewportSize = camera.viewport.size;
-//     final centerPosition = Vector2(viewportSize.x / 2, viewportSize.y / 2);
-    
-//     final x = (centerPosition.x / cellSize).floor();
-//     final y = (centerPosition.y / cellSize).floor();
-    
-//     if (x >= 0 && x < settings.width && y >= 0 && y < settings.height) {
-//       final cell = grid[y][x];
-      
-//       if (!cell.isRevealed) {
-//         cell.isFlagged = !cell.isFlagged;
-//         flagsPlaced += cell.isFlagged ? 1 : -1;
-        
-//         if (checkWinCondition()) {
-//           gameWon = true;
-//         }
-//       }
-//     }
-//   }
+  bool checkWinCondition() {
+  // Проверяем, все ли не-мины открыты
+  for (final row in grid) {
+    for (final cell in row) {
+      if (!cell.isMine && !cell.isRevealed) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
 @override
 void onLongPress() {
   if (gameOver || gameWon) return;
@@ -317,112 +307,61 @@ void onLongPress() {
     }
   }
 }
-  // void revealCell(int x, int y) { 
-  //   if (x < 0 || x >= settings.width || y < 0 || y >= settings.height) return;
-    
-  //   final cell = grid[y][x];
-    
-  //   if (cell.isRevealed || cell.isFlagged) return;
-    
-  //   cell.isRevealed = true;
-  //   cellsRevealed++;
-    
-  //   if (cell.isMine) {
-  //     gameOver = true;
-  //     for (int yy = 0; yy < settings.height; yy++) {
-  //       for (int xx = 0; xx < settings.width; xx++) {
-  //         if (grid[yy][xx].isMine) {
-  //           grid[yy][xx].isRevealed = true;
-  //         }
-  //       }
-  //     }
-  //     return;
-  //   }
-    
-  //   if (checkWinCondition()) {
-  //     gameWon = true;
-  //     return;
-  //   }
-    
-  //   if (cell.adjacentMines == 0) {
-  //     for (int dy = -1; dy <= 1; dy++) {
-  //       for (int dx = -1; dx <= 1; dx++) {
-  //         if (dx == 0 && dy == 0) continue;
-  //         revealCell(x + dx, y + dy);
-  //       }
-  //     }
-  //   }
-  // }
-  void revealCell(int x, int y) {
-     if (gameOver || gameWon) return;
-    
-    final cell = grid[y][x];
-    if (cell.isRevealed || cell.isFlagged) return;  
+   void revealCell(int x, int y) {
+  if (gameOver || gameWon) return;
+  
+  final cell = grid[y][x];
+  if (cell.isRevealed || cell.isFlagged) return;
 
-    cell.isRevealed = true;
-    cellsRevealed++;
+  cell.isRevealed = true;
+  cellsRevealed++;
 
-    if (cell.isMine) {
-      _endGame(false); // Проигрыш
-      return;
-    }
+  if (cell.isMine) {
+    _endGame(false); // Проигрыш
+    return;
+  }
 
-    if (checkWinCondition()) {
-      _endGame(true); // Победа
-      return;
-    }
+  if (checkWinCondition()) {
+    _endGame(true); // Победа
+    return;
+  }
 
-    if (cell.adjacentMines == 0) {
-      // Открываем соседние клетки
-      for (var dy = -1; dy <= 1; dy++) {
-        for (var dx = -1; dx <= 1; dx++) {
-          if (dx == 0 && dy == 0) continue;
-          final nx = x + dx;
-          final ny = y + dy;
-          if (nx >= 0 && nx < settings.width && ny >= 0 && ny < settings.height) {
-            revealCell(nx, ny);
-          }
+  if (cell.adjacentMines == 0) {
+    for (var dy = -1; dy <= 1; dy++) {
+      for (var dx = -1; dx <= 1; dx++) {
+        if (dx == 0 && dy == 0) continue;
+        final nx = x + dx;
+        final ny = y + dy;
+        if (nx >= 0 && nx < settings.width && ny >= 0 && ny < settings.height) {
+          revealCell(nx, ny);
         }
       }
     }
   }
+} 
 void showGameOver(bool isWin) {
-    if (gameWrapperContext == null) return;
-    
-    Navigator.of(gameWrapperContext!).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => GameOverScreen(
-          isWin: isWin,
-          onRestart: () {
-            Navigator.of(gameWrapperContext!).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => GameWrapper(game: MinesweeperGame(settings: settings)),
-              ),
-            );
-          },
-          onMenu: () {
-            Navigator.of(gameWrapperContext!).pushReplacement(
-              MaterialPageRoute(builder: (context) => const MainMenuScreen()),
-            );
-          },
-        ),
-      ),
-    );
-  }
-  // bool checkWinCondition() {
-  //   return cellsRevealed == (settings.width * settings.height - settings.minesCount);
-  // }
-  bool checkWinCondition() {
-  final allNonMinesRevealed = cellsRevealed == (settings.width * settings.height - settings.minesCount);
-  final allMinesFlagged = grid.expand((row) => row)
-      .where((cell) => cell.isMine)
-      .every((mine) => mine.isFlagged);
+  if (gameWrapperContext == null || !gameWrapperContext!.mounted) return;
   
-  if (allNonMinesRevealed || allMinesFlagged) {
-    gameWon = true;
-    showGameOver(true); // Автоматически показываем победу при проверке
-    return true;
-  }
-  return false;
+  Navigator.of(gameWrapperContext!).pushReplacement(
+    MaterialPageRoute(
+      builder: (context) => GameOverScreen(
+        isWin: isWin,
+        onRestart: () {
+          Navigator.of(gameWrapperContext!).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const GameWrapper(), // Исправлено здесь
+            ),
+          );
+        },
+        onMenu: () {
+          Navigator.of(gameWrapperContext!).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const MainMenuScreen(),
+            ),
+          );
+        },
+      ),
+    ),
+  );
 }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'screens.dart';
-import 'game_wrapper.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,6 +14,7 @@ class MyApp extends StatelessWidget {
       title: 'Сапер',
       theme: ThemeData(primarySwatch: Colors.blue),
       home: const MainMenuScreen(),
+      debugShowCheckedModeBanner: false,
     );
   }
-}
+} 
