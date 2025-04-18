@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'game/minesweeper_game.dart';
-import 'game_wrapper.dart'; 
-import 'package:flame/game.dart';
+import 'game_wrapper.dart';
+
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
@@ -23,6 +23,16 @@ class MainMenuScreen extends StatelessWidget {
               ),
               child: const Text('Начать игру', style: TextStyle(fontSize: 24)),
             ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuthorsScreen()),
+                );
+              },
+              child: const Text('Об авторах', style: TextStyle(fontSize: 24)),
+            ),
           ],
         ),
       ),
@@ -35,7 +45,13 @@ class AuthorsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('О команде')),
+      appBar: AppBar(
+        title: const Text('Об авторах'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: const Padding(
         padding: EdgeInsets.all(20),
         child: Column(
@@ -48,12 +64,11 @@ class AuthorsScreen extends StatelessWidget {
             SizedBox(height: 15),
             Text('• Петр Петров - дизайнер'),
             Text('   Телефон: +7 (123) 456-78-90'),
+            SizedBox(height: 15),
+            Text('• Алексей Алексеев - тестировщик'),
+            Text('   GitHub: github.com/alexeydev'),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pop(context),
-        child: const Icon(Icons.arrow_back),
       ),
     );
   }
