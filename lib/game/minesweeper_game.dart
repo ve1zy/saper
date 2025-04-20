@@ -6,8 +6,6 @@ import 'cell.dart';
 import 'settings.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/gestures.dart';
-import '../screens.dart';
-import '../game_wrapper.dart';
 class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   late GameSettings settings;
   late List<List<Cell>> grid;
@@ -29,20 +27,11 @@ class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   Duration _pausedDuration = Duration.zero;
   late void Function(bool isWin) onGameEnd; 
   late double _offsetX;
-  Vector2? _longPressPosition;
-  Vector2? _lastTapPosition;
-  bool _isLongPress = false;
-  DateTime? _longPressStartTime;
-  int _longPressDuration = 500;
-  final int _longPressDelay = 500;
 late double _offsetY;
 late double _cellSize;
-int? _lastTapX;
-int? _lastTapY;
 Vector2? _pendingFlagPosition;
 bool _isFlagging = false;
-final double _flagPressDuration = 0.5; // 0.5 секунды для флага
-Vector2? _tapStartPosition;
+final double _flagPressDuration = 0.5;
   MinesweeperGame({GameSettings? settings}) {
     this.settings = settings ?? GameSettings.easy;
   }
@@ -164,14 +153,12 @@ _endTime = null;
 @override
 void render(Canvas canvas) {
   _calculateSizes();
-  
-  // Отрисовка фона
+
   canvas.drawRect(
     Rect.fromLTWH(0, 0, size.x, size.y),
     Paint()..color = const Color(0xFF222222),
   );
 
-  // Отрисовка клеток
   for (int y = 0; y < settings.height; y++) {
     for (int x = 0; x < settings.width; x++) {
       final cell = grid[y][x];
@@ -184,7 +171,7 @@ void render(Canvas canvas) {
       if (cell.isFlagged) {
     _drawFlag(canvas, rect);
   }
-      // Отрисовка клетки
+
       canvas.drawRect(
         rect,
         Paint()..color = cell.isRevealed ? Colors.grey[300]! : Colors.grey[500]!,
@@ -197,7 +184,7 @@ void render(Canvas canvas) {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1,
       );
-// В цикле отрисовки клеток:
+
 if (_pendingFlagPosition != null && 
     x == _pendingFlagPosition!.x.toInt() && 
     y == _pendingFlagPosition!.y.toInt()) {
@@ -206,7 +193,7 @@ if (_pendingFlagPosition != null &&
     Paint()..color = _isFlagging ? Colors.red.withOpacity(0.3) : Colors.white.withOpacity(0.1),
   );
 }
-      // Отрисовка содержимого
+
       if (cell.isRevealed) {
         _drawRevealedCell(canvas, cell, rect);
       } else if (cell.isFlagged) {
@@ -215,7 +202,7 @@ if (_pendingFlagPosition != null &&
     }
   }
 
-  // Отрисовка HUD
+
   _drawHud(canvas);
 }
 
@@ -264,7 +251,6 @@ void _drawRevealedCell(Canvas canvas, Cell cell, Rect rect) {
 void _drawFlag(Canvas canvas, Rect rect) {
   final flagPaint = Paint()..color = Colors.red;
   
-  // Флагшток
   canvas.drawRect(
     Rect.fromLTWH(
       rect.left + _cellSize * 0.3,
@@ -275,7 +261,6 @@ void _drawFlag(Canvas canvas, Rect rect) {
     flagPaint,
   );
   
-  // Треугольник флага
   final path = Path()
     ..moveTo(rect.left + _cellSize * 0.4, rect.top + _cellSize * 0.2)
     ..lineTo(rect.left + _cellSize * 0.7, rect.top + _cellSize * 0.35)
@@ -284,7 +269,6 @@ void _drawFlag(Canvas canvas, Rect rect) {
 }
 
 void _drawHud(Canvas canvas) {
-  // Флаги
   final flagsText = TextPainter(
     text: TextSpan(
       text: 'Флаги: ${settings.minesCount - flagsPlaced}',
@@ -295,7 +279,6 @@ void _drawHud(Canvas canvas) {
   flagsText.layout();
   flagsText.paint(canvas, Offset(_offsetX, _offsetY - 30));
 
-  // Таймер
   final timeText = TextPainter(
     text: TextSpan(
       text: 'Время: ${currentTimeInSeconds}',
@@ -324,46 +307,6 @@ void _drawHud(Canvas canvas) {
     }
   }
 
-
-void _resetTapState() {
-  _tapStartPosition = null;
-  _longPressPosition = null;
-  _longPressStartTime = null;
-  _lastTapX = null;
-  _lastTapY = null;
-}
-void _handleTap() {
-  if (gameOver || gameWon || _lastTapPosition == null) return;
-
-  final x = ((_lastTapPosition!.x - _offsetX) / _cellSize).floor();
-  final y = ((_lastTapPosition!.y - _offsetY) / _cellSize).floor();
-
-  if (x >= 0 && x < settings.width && y >= 0 && y < settings.height) {
-    final cell = grid[y][x];
-    if (!cell.isRevealed && !cell.isFlagged) {
-      revealCell(x, y);
-    }
-  }
-}
-
-void _handleLongPress() {
-  if (gameOver || gameWon || _lastTapPosition == null) return;
-
-  final x = ((_lastTapPosition!.x - _offsetX) / _cellSize).floor();
-  final y = ((_lastTapPosition!.y - _offsetY) / _cellSize).floor();
-
-  if (x >= 0 && x < settings.width && y >= 0 && y < settings.height) {
-    final cell = grid[y][x];
-    if (!cell.isRevealed) {
-      cell.isFlagged = !cell.isFlagged;
-      flagsPlaced += cell.isFlagged ? 1 : -1;
-      if (checkWinCondition()) {
-        gameWon = true;
-        _endGame(true);
-      }
-    }
-  }
-}
 @override
 void onTapDown(TapDownInfo info) {
   _calculateSizes();
@@ -375,7 +318,6 @@ void onTapDown(TapDownInfo info) {
     _pendingFlagPosition = Vector2(x.toDouble(), y.toDouble());
     _isFlagging = false;
     
-    // Запускаем таймер для флага
     Future.delayed(Duration(milliseconds: (_flagPressDuration * 1000).toInt()), () {
       if (_pendingFlagPosition != null && !_isFlagging) {
         _isFlagging = true;
@@ -388,7 +330,6 @@ void onTapDown(TapDownInfo info) {
 @override
 void onTapUp(TapUpInfo info) {
   if (_pendingFlagPosition != null && !_isFlagging) {
-    // Это было короткое нажатие - открываем клетку
     final cell = grid[_pendingFlagPosition!.y.toInt()][_pendingFlagPosition!.x.toInt()];
     if (!cell.isRevealed && !cell.isFlagged) {
       revealCell(_pendingFlagPosition!.x.toInt(), _pendingFlagPosition!.y.toInt());
@@ -414,49 +355,11 @@ void _placeOrRemoveFlag(Vector2 position) {
     cell.isFlagged = !cell.isFlagged;
     flagsPlaced += cell.isFlagged ? 1 : -1;
     
-    // Проверка победы
     if (checkWinCondition()) {
       gameWon = true;
       _endGame(true);
     }
   }
-}
-@override
-void onDragStart(DragStartInfo info) {
-  // Запоминаем позицию начала касания
-  _calculateSizes();
-  final gamePosition = info.eventPosition.widget;
-  _lastTapX = ((gamePosition.x - _offsetX) / _cellSize).floor();
-  _lastTapY = ((gamePosition.y - _offsetY) / _cellSize).floor();
-}
-
-@override
-void onDragEnd(DragEndInfo info) {
-  if (gameOver || gameWon) {
-    resetGame();
-    return;
-  }
-
-  if (_lastTapX != null && _lastTapY != null) {
-    final x = _lastTapX!;
-    final y = _lastTapY!;
-    
-    if (x >= 0 && x < settings.width && y >= 0 && y < settings.height) {
-      final cell = grid[y][x];
-      if (!cell.isRevealed && !cell.isFlagged) {
-        revealCell(x, y);
-      }
-    }
-  }
-  
-  _lastTapX = null;
-  _lastTapY = null;
-}
-
-@override
-void onDragCancel() {
-  _lastTapX = null;
-  _lastTapY = null;
 }
 @override
 void onLongPressStart(LongPressStartInfo info) {
@@ -483,7 +386,6 @@ void _toggleFlag(int x, int y) {
     cell.isFlagged = !cell.isFlagged;
     flagsPlaced += cell.isFlagged ? 1 : -1;
     
-    // Проверяем условие победы
     if (checkWinCondition()) {
       gameWon = true;
       _endGame(true);
@@ -491,7 +393,6 @@ void _toggleFlag(int x, int y) {
   }
 }
   bool checkWinCondition() {
-  // Проверяем, все ли не-мины открыты
   for (final row in grid) {
     for (final cell in row) {
       if (!cell.isMine && !cell.isRevealed) {
@@ -521,7 +422,6 @@ void _toggleFlag(int x, int y) {
   }
 
   if (cell.adjacentMines == 0) {
-    // Рекурсивное открытие соседних клеток
     for (var dy = -1; dy <= 1; dy++) {
       for (var dx = -1; dx <= 1; dx++) {
         if (dx == 0 && dy == 0) continue;

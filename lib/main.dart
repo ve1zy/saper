@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Сапер',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home: const MainMenuScreen(), // Главное меню как стартовый экран
+      home: const MainMenuScreen(), 
       debugShowCheckedModeBanner: false,
     );
   }

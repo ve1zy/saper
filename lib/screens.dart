@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'game/minesweeper_game.dart';
 import 'game_wrapper.dart';
 
 class MainMenuScreen extends StatelessWidget {

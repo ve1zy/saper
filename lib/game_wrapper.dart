@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flame/game.dart';
 import 'game/minesweeper_game.dart';
 import 'screens.dart';
@@ -131,7 +130,8 @@ class _GameWrapperState extends State<GameWrapper> {
 
   Widget _buildGameOverDialog(bool isWin) {
     return AlertDialog(
-      backgroundColor: Colors.grey[800]!.withOpacity(0.9),
+      // backgroundColor: Colors.grey[800]!.withOpacity(0.9),
+      backgroundColor: Colors.grey[800]!,
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
