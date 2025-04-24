@@ -6,18 +6,20 @@ class Explosion extends SpriteAnimationComponent {
       : super(position: position, size: size);
   
   @override
-  Future<void> onLoad() async {
-    super.onLoad();
-    
+Future<void> onLoad() async {
+  super.onLoad();
+  try {
     final spriteSheet = SpriteSheet(
       image: await Flame.images.load('explosion.png'),
-      srcSize: Vector2(64, 64),
+      srcSize: Vector2(220, 212), // Размер одного кадра
     );
-    
     animation = spriteSheet.createAnimation(
       row: 0,
       stepTime: 0.1,
-      to: 8,
+      to: 9,
     );
+  } catch (e) {
+    print('Ошибка загрузки анимации: $e');
   }
+}
 }

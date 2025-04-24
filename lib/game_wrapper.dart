@@ -5,7 +5,7 @@ import 'screens.dart';
 import 'game/settings.dart';
 class GameWrapper extends StatefulWidget {
   final GameSettings settings;
-  
+
   const GameWrapper({super.key, this.settings = GameSettings.easy});
 
   @override
@@ -18,11 +18,9 @@ class _GameWrapperState extends State<GameWrapper> {
   final _lifecycleObserver = _AppLifecycleObserver();
   OverlayEntry? _pauseOverlay;
 
-  @override
+ @override
   void initState() {
     super.initState();
-    _lifecycleObserver.onStateChanged = _handleAppLifecycleChange;
-    WidgetsBinding.instance.addObserver(_lifecycleObserver);
     _initGame();
   }
 
@@ -32,18 +30,6 @@ class _GameWrapperState extends State<GameWrapper> {
       ..onPause = (isPaused) {
         if (mounted) setState(() => _isPaused = isPaused);
       };
-  }
-
-  void _handleAppLifecycleChange(AppLifecycleState state) {
-    if (!mounted) return;
-    
-    setState(() {
-      if (state == AppLifecycleState.paused) {
-        _showPauseDialog();
-      } else if (state == AppLifecycleState.resumed) {
-        _hidePauseDialog();
-      }
-    });
   }
 
   void _showPauseDialog() {
@@ -129,48 +115,81 @@ class _GameWrapperState extends State<GameWrapper> {
   }
 
   Widget _buildGameOverDialog(bool isWin) {
-    return AlertDialog(
-      // backgroundColor: Colors.grey[800]!.withOpacity(0.9),
-      backgroundColor: Colors.grey[800]!,
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(isWin ? 'Победа!' : 'Поражение', style: const TextStyle(fontSize: 24)),
-          const SizedBox(height: 30),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-                setState(() => _initGame());
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-              child: const Text('Новая игра'),
-            ),
-          ),
-          const SizedBox(height: 15),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const MainMenuScreen()),
-                (route) => false,
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                padding: const EdgeInsets.symmetric(vertical: 15),
-              ),
-              child: const Text('В меню'),
-            ),
-          ),
-        ],
-      ),
-    );
+  final time = game.currentTimeInSeconds;
+  String levelKey;
+  if (game.settings == GameSettings.easy) {
+    levelKey = 'easy';
+  } else if (game.settings == GameSettings.medium) {
+    levelKey = 'medium';
+  } else {
+    levelKey = 'hard';
   }
+
+  return FutureBuilder<int?>(
+    future: GameStats.getRecord(levelKey),
+    builder: (context, snapshot) {
+      final record = snapshot.data;
+      return AlertDialog(
+        backgroundColor: Colors.grey[800]!,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isWin ? 'Победа!' : 'Поражение',
+              style: const TextStyle(fontSize: 24),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Время: $time секунд',
+              style: const TextStyle(fontSize: 18),
+            ),
+            if (isWin && (record == null || time < record))
+              const Text(
+                'Новый рекорд!',
+                style: TextStyle(fontSize: 18, color: Colors.green),
+              ),
+            if (record != null)
+              Text(
+                'Рекорд: $record секунд',
+                style: const TextStyle(fontSize: 18),
+              ),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() => _initGame());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text('Новая игра'),
+              ),
+            ),
+            const SizedBox(height: 15),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MainMenuScreen()),
+                  (route) => false,
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
+                ),
+                child: const Text('В меню'),
+              ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
 
   @override
   void dispose() {

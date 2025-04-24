@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'game_wrapper.dart';
-
+import 'game/settings.dart';
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
 
@@ -12,14 +12,19 @@ class MainMenuScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Сапер', style: TextStyle(fontSize: 48)),
-            const SizedBox(height: 40),
+            const Text('Рекорды', style: TextStyle(fontSize: 30)),
+            const SizedBox(height: 20),
+            RecordDisplay(level: 'Легкий', keyName: 'easy'),
+            RecordDisplay(level: 'Средний', keyName: 'medium'),
+            RecordDisplay(level: 'Тяжелый', keyName: 'hard'),
+            const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () => Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const GameWrapper(),
-                ),
-              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const DifficultySelectionScreen()),
+                );
+              },
               child: const Text('Начать игру', style: TextStyle(fontSize: 24)),
             ),
             const SizedBox(height: 20),
@@ -35,6 +40,41 @@ class MainMenuScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class RecordDisplay extends StatefulWidget {
+  final String level;
+  final String keyName;
+
+  const RecordDisplay({super.key, required this.level, required this.keyName});
+
+  @override
+  State<RecordDisplay> createState() => _RecordDisplayState();
+}
+
+class _RecordDisplayState extends State<RecordDisplay> {
+  String? recordText;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecord();
+  }
+
+  Future<void> _loadRecord() async {
+    final record = await GameStats.getRecord(widget.keyName);
+    setState(() {
+      recordText = record != null ? '${widget.level}: $record сек.' : '${widget.level}: Рекорд не установлен';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      recordText ?? 'Загрузка...',
+      style: const TextStyle(fontSize: 18),
     );
   }
 }
@@ -58,14 +98,73 @@ class AuthorsScreen extends StatelessWidget {
           children: [
             Text('Разработчики:', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             SizedBox(height: 20),
-            Text('• Иван Иванов - главный разработчик'),
-            Text('   Email: ivan@example.com'),
+            Text('• Жуков Павел Алексеевич - главный разработчик'),
+            Text('   Email: zhukowgg@gmail.com'),
+            Text('   Телефон: +7 (913) 961-22-79'),
+            Text('   Телеграм: @wtfimcryin'),
+            Text('   GitHub: https://github.com/ve1zy'),
             SizedBox(height: 15),
-            Text('• Петр Петров - дизайнер'),
-            Text('   Телефон: +7 (123) 456-78-90'),
+            Text('• Асмолов - дизайнер'),
             SizedBox(height: 15),
-            Text('• Алексей Алексеев - тестировщик'),
-            Text('   GitHub: github.com/alexeydev'),
+            Text('• Боргуль - тестировщик'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+class DifficultySelectionScreen extends StatelessWidget {
+  const DifficultySelectionScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Выбор уровня сложности'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GameWrapper(settings: GameSettings.easy),
+                  ),
+                );
+              },
+              child: const Text('Легкий (9x9, 10 мин)'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GameWrapper(settings: GameSettings.medium),
+                  ),
+                );
+              },
+              child: const Text('Средний (16x16, 40 мин)'),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GameWrapper(settings: GameSettings.hard),
+                  ),
+                );
+              },
+              child: const Text('Тяжелый (20x25, 99 мин)'),
+            ),
           ],
         ),
       ),

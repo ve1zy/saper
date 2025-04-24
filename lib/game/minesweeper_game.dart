@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'cell.dart';
 import 'settings.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/gestures.dart';
+import 'package:flame_audio/flame_audio.dart';
+import 'components/explosion.dart';
 class MinesweeperGame extends FlameGame with TapDetector, LongPressDetector {
   late GameSettings settings;
   late List<List<Cell>> grid;
@@ -66,6 +67,7 @@ int get currentTimeInSeconds {
   @override
   Future<void> onLoad() async {
     super.onLoad();
+    await FlameAudio.audioCache.loadAll(['explosion.mp3', 'flag.mp3']);
     resetGame();
   }
   void initContext(BuildContext context) {
@@ -73,17 +75,34 @@ int get currentTimeInSeconds {
 }
 
 
-void _endGame(bool isWin) {
+void _endGame(bool isWin) async {
   _endTime = DateTime.now();
   gameOver = !isWin;
   gameWon = isWin;
 
   if (!isWin) {
+    FlameAudio.play('explosion.mp3');
     for (final row in grid) {
       for (final cell in row) {
-        if (cell.isMine) cell.isRevealed = true;
+        if (cell.isMine){
+          _addExplosion(cell);
+          cell.isRevealed = true;
+        } 
       }
     }
+  }
+
+  if (isWin) {
+    final time = currentTimeInSeconds;
+    String levelKey;
+    if (settings == GameSettings.easy) {
+      levelKey = 'easy';
+    } else if (settings == GameSettings.medium) {
+      levelKey = 'medium';
+    } else {
+      levelKey = 'hard';
+    }
+    await GameStats.updateRecord(levelKey, time); // Обновляем рекорд
   }
 
   if (onGameEnd != null) {
@@ -207,15 +226,9 @@ if (_pendingFlagPosition != null &&
 }
 
 void _calculateSizes() {
-  _cellSize = min(
-    size.x / settings.width,
-    size.y / settings.height,
-  ) * 0.9;
-  
-  final fieldWidth = _cellSize * settings.width;
-  final fieldHeight = _cellSize * settings.height;
-  _offsetX = (size.x - fieldWidth) / 2;
-  _offsetY = (size.y - fieldHeight) / 2;
+  _cellSize = size.x / settings.width;
+_offsetX = 0;
+_offsetY = (size.y - _cellSize * settings.height) / 2;
 }
 
 void _drawRevealedCell(Canvas canvas, Cell cell, Rect rect) {
@@ -281,7 +294,7 @@ void _drawHud(Canvas canvas) {
 
   final timeText = TextPainter(
     text: TextSpan(
-      text: 'Время: ${currentTimeInSeconds}',
+      text: 'Время: ${currentTimeInSeconds} сек.',
       style: const TextStyle(color: Colors.white, fontSize: 24),
     ),
     textDirection: TextDirection.ltr,
@@ -292,7 +305,6 @@ void _drawHud(Canvas canvas) {
     Offset(_offsetX + _cellSize * settings.width - timeText.width, _offsetY - 30),
   );
 }
-
   Color getNumberColor(int number) {
     switch (number) {
       case 1: return Colors.blue;
@@ -306,7 +318,6 @@ void _drawHud(Canvas canvas) {
       default: return Colors.black;
     }
   }
-
 @override
 void onTapDown(TapDownInfo info) {
   _calculateSizes();
@@ -315,9 +326,11 @@ void onTapDown(TapDownInfo info) {
   final y = ((position.y - _offsetY) / _cellSize).floor();
 
   if (x >= 0 && x < settings.width && y >= 0 && y < settings.height) {
+    final cell = grid[y][x];
+    if (cell.isRevealed) return; 
+
     _pendingFlagPosition = Vector2(x.toDouble(), y.toDouble());
     _isFlagging = false;
-    
     Future.delayed(Duration(milliseconds: (_flagPressDuration * 1000).toInt()), () {
       if (_pendingFlagPosition != null && !_isFlagging) {
         _isFlagging = true;
@@ -326,7 +339,6 @@ void onTapDown(TapDownInfo info) {
     });
   }
 }
-
 @override
 void onTapUp(TapUpInfo info) {
   if (_pendingFlagPosition != null && !_isFlagging) {
@@ -346,20 +358,40 @@ void onTapCancel() {
 }
 void _placeOrRemoveFlag(Vector2 position) {
   if (gameOver || gameWon) return;
-  
   final x = position.x.toInt();
   final y = position.y.toInt();
   final cell = grid[y][x];
-  
-  if (!cell.isRevealed) {
+
+  if (cell.isRevealed) return;
+
+  bool wasFlagged = cell.isFlagged;
+  cell.isFlagged = !cell.isFlagged;
+
+  if (cell.isFlagged && !wasFlagged && flagsPlaced < settings.minesCount) {
+    flagsPlaced++; 
+  } else if (!cell.isFlagged && wasFlagged) {
+    flagsPlaced--;
+  }
+
+    if (!cell.isRevealed) {
     cell.isFlagged = !cell.isFlagged;
     flagsPlaced += cell.isFlagged ? 1 : -1;
-    
+
     if (checkWinCondition()) {
       gameWon = true;
       _endGame(true);
     }
   }
+}
+void _addExplosion(Cell cell) {
+  final explosion = Explosion(
+    position: Vector2(
+      _offsetX + cell.x * _cellSize,
+      _offsetY + cell.y * _cellSize,
+    ),
+    size: Vector2(_cellSize, _cellSize),
+  );
+  add(explosion);
 }
 @override
 void onLongPressStart(LongPressStartInfo info) {
@@ -373,23 +405,38 @@ void onLongPressStart(LongPressStartInfo info) {
 @override
 void onLongPressEnd(LongPressEndInfo info) {
   if (_flagX != null && _flagY != null && _isLongPressing) {
-    _toggleFlag(_flagX!, _flagY!);
+    final cell = grid[_flagY!][_flagX!];
+    if (!cell.isRevealed) {
+      _toggleFlag(_flagX!, _flagY!);
+    }
   }
   _isLongPressing = false;
 }
 void _toggleFlag(int x, int y) {
   if (x < 0 || x >= settings.width || y < 0 || y >= settings.height) return;
-  
   final cell = grid[y][x];
-  
-  if (!cell.isRevealed) {
-    cell.isFlagged = !cell.isFlagged;
-    flagsPlaced += cell.isFlagged ? 1 : -1;
-    
-    if (checkWinCondition()) {
-      gameWon = true;
-      _endGame(true);
-    }
+  bool wasFlagged;
+  if (cell.isRevealed) return;
+  if(cell.isFlagged==false && flagsPlaced < settings.minesCount) {
+    wasFlagged = cell.isFlagged;  
+    cell.isFlagged = true;
+  }
+  else {
+    wasFlagged = cell.isFlagged; 
+    cell.isFlagged = false;
+  }
+
+  if (cell.isFlagged && !wasFlagged && flagsPlaced < settings.minesCount && !cell.isRevealed) {
+    flagsPlaced++;
+    FlameAudio.play('flag.mp3');
+  } else if (!cell.isFlagged && wasFlagged) {
+    flagsPlaced--; 
+    FlameAudio.play('flag.mp3');
+  }
+
+  if (checkWinCondition()) {
+    gameWon = true;
+    _endGame(true);
   }
 }
   bool checkWinCondition() {
