@@ -88,7 +88,12 @@ class _GameWrapperState extends State<GameWrapper> {
                     backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  child: const Text('Продолжить'),
+                  child: gradientDialogButton(
+  text: 'Продолжить',
+  onPressed: _hidePauseDialog,
+  startColor: Colors.green,
+  endColor: Colors.lightGreen,
+),
                 ),
               ),
               const SizedBox(height: 15),
@@ -104,7 +109,16 @@ class _GameWrapperState extends State<GameWrapper> {
                     backgroundColor: Colors.blue,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
-                  child: const Text('В меню'),
+                  child: gradientDialogButton(
+  text: 'В меню',
+  onPressed: () => Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const MainMenuScreen()),
+    (route) => false,
+  ),
+  startColor: Colors.blue,
+  endColor: Colors.lightBlue,
+),
                 ),
               ),
             ],
@@ -165,7 +179,16 @@ class _GameWrapperState extends State<GameWrapper> {
                   backgroundColor: Colors.green,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: const Text('Новая игра'),
+                child: gradientDialogButton(
+  text: 'Новая игра',
+  onPressed: () => Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const MainMenuScreen()),
+    (route) => false,
+  ),
+  startColor: Colors.green,
+  endColor: Colors.lightGreen,
+),
               ),
             ),
             const SizedBox(height: 15),
@@ -181,7 +204,16 @@ class _GameWrapperState extends State<GameWrapper> {
                   backgroundColor: Colors.blue,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: const Text('В меню'),
+                child: gradientDialogButton(
+  text: 'В меню',
+  onPressed: () => Navigator.pushAndRemoveUntil(
+    context,
+    MaterialPageRoute(builder: (_) => const MainMenuScreen()),
+    (route) => false,
+  ),
+  startColor: Colors.blue,
+  endColor: Colors.lightBlue,
+),
               ),
             ),
           ],
@@ -207,10 +239,11 @@ class _GameWrapperState extends State<GameWrapper> {
           Positioned(
             top: 10,
             right: 10,
-            child: IconButton(
-              icon: const Icon(Icons.pause),
-              onPressed: _showPauseDialog,
-            ),
+            child: Positioned(
+  top: 10,
+  right: 10,
+  child: pauseButton(onPressed: _showPauseDialog),
+),
           ),
         ],
       ),
@@ -225,4 +258,67 @@ class _AppLifecycleObserver with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     onStateChanged?.call(state);
   }
+}
+Widget pauseButton({required VoidCallback onPressed}) {
+  return GestureDetector(
+    onTap: onPressed,
+    child: Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.red,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.pause,
+        size: 30,
+        color: Colors.white,
+      ),
+    ),
+  );
+}Widget gradientDialogButton({
+  required String text,
+  required VoidCallback onPressed,
+  Color startColor = Colors.green,
+  Color endColor = Colors.lightGreen,
+}) {
+  return GestureDetector(
+    onTap: onPressed,
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [startColor, endColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ),
+  );
 }

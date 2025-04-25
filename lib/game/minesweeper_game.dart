@@ -175,7 +175,7 @@ void render(Canvas canvas) {
 
   canvas.drawRect(
     Rect.fromLTWH(0, 0, size.x, size.y),
-    Paint()..color = const Color(0xFF222222),
+    Paint()..color = const Color(0xFF008080),
   );
 
   for (int y = 0; y < settings.height; y++) {

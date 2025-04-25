@@ -18,25 +18,30 @@ class MainMenuScreen extends StatelessWidget {
             RecordDisplay(level: 'Средний', keyName: 'medium'),
             RecordDisplay(level: 'Тяжелый', keyName: 'hard'),
             const SizedBox(height: 20),
-            ElevatedButton(
+            
+            gradientButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const DifficultySelectionScreen()),
                 );
               },
-              child: const Text('Начать игру', style: TextStyle(fontSize: 24)),
-            ),
+  text: 'Начать игру',
+  startColor: Colors.blue,
+  endColor: Colors.cyan,
+),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AuthorsScreen()),
-                );
-              },
-              child: const Text('Об авторах', style: TextStyle(fontSize: 24)),
-            ),
+            gradientButton(
+  text: 'Об авторах',
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AuthorsScreen()),
+    );
+  },
+  startColor: Colors.orange,
+  endColor: Colors.deepOrange,
+),
           ],
         ),
       ),
@@ -86,13 +91,15 @@ class AuthorsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Об авторах'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Positioned(
+  top: 10,
+  right: 10,
+  child: pauseButton(onPressed: () => Navigator.pop(context)),
+),
       ),
+      
       body: const Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(20),  
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -104,9 +111,9 @@ class AuthorsScreen extends StatelessWidget {
             Text('   Телеграм: @wtfimcryin'),
             Text('   GitHub: https://github.com/ve1zy'),
             SizedBox(height: 15),
-            Text('• Асмолов - дизайнер'),
+            Text('• Асмолов Роман Андреевич - дизайнер'),
             SizedBox(height: 15),
-            Text('• Боргуль - тестировщик'),
+            Text('• Боргуль Иван Сергеевич - тестировщик'),
           ],
         ),
       ),
@@ -121,11 +128,13 @@ class DifficultySelectionScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Выбор уровня сложности'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Positioned(
+  top: 10,
+  right: 10,
+  child: pauseButton(onPressed: () => Navigator.pop(context)),
+),
       ),
+      
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -226,4 +235,65 @@ class GameOverDialog extends StatelessWidget {
       ),
     );
   }
+}
+Widget gradientButton({
+  required String text,
+  required VoidCallback onPressed,
+  Color startColor = Colors.blue,
+  Color endColor = Colors.cyan,
+}) {
+  return GestureDetector(
+    onTap: onPressed,
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [startColor, endColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    ),
+  );
+}
+Widget pauseButton({required VoidCallback onPressed}) {
+  return GestureDetector(
+    onTap: onPressed,
+    child: Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.red,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Icon(
+        Icons.pause,
+        size: 30,
+        color: Colors.white,
+      ),
+    ),
+  );
 }
