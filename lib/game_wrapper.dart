@@ -179,13 +179,8 @@ class _GameWrapperState extends State<GameWrapper> {
                   backgroundColor: Colors.green,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: gradientDialogButton(
+                child: gradientDialogButton1(
   text: 'Новая игра',
-  onPressed: () => Navigator.pushAndRemoveUntil(
-    context,
-    MaterialPageRoute(builder: (_) => const MainMenuScreen()),
-    (route) => false,
-  ),
   startColor: Colors.green,
   endColor: Colors.lightGreen,
 ),
@@ -291,6 +286,43 @@ Widget pauseButton({required VoidCallback onPressed}) {
 }) {
   return GestureDetector(
     onTap: onPressed,
+    child: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [startColor, endColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          text,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+Widget gradientDialogButton1({
+  required String text,
+  Color startColor = Colors.green,
+  Color endColor = Colors.lightGreen,
+}) {
+  return GestureDetector(
     child: Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 15),
