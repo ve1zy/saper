@@ -91,13 +91,8 @@ class AuthorsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Об авторах'),
-        leading: Positioned(
-  top: 10,
-  right: 10,
-  child: pauseButton(onPressed: () => Navigator.pop(context)),
-),
+        leading: pauseButton(onPressed: () => Navigator.pop(context)),
       ),
-      
       body: const Padding(
         padding: EdgeInsets.all(20),  
         child: Column(
@@ -128,11 +123,7 @@ class DifficultySelectionScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Выбор уровня сложности'),
-        leading: Positioned(
-  top: 10,
-  right: 10,
-  child: pauseButton(onPressed: () => Navigator.pop(context)),
-),
+        leading: pauseButton(onPressed: () => Navigator.pop(context)),
       ),
       
       body: Center(
